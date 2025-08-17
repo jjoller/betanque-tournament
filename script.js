@@ -1,4 +1,4 @@
-class CurlingTournament {
+class PetanqueTournament {
     constructor() {
         this.players = [];
         this.currentRound = 0;
@@ -6,6 +6,7 @@ class CurlingTournament {
         this.usedPartnerships = new Set();
         this.currentGames = [];
         this.gameResults = [];
+        this.fieldCount = 2;
     }
 
     addPlayer(name) {
@@ -42,7 +43,7 @@ class CurlingTournament {
 
     formTeams() {
         if (this.players.length < 4) {
-            throw new Error('Need at least 4 players to form teams');
+            throw new Error('Il faut au moins 4 joueurs pour former des équipes');
         }
 
         const totalPlayers = this.players.length;
@@ -118,16 +119,22 @@ class CurlingTournament {
         return this.formTeams();
     }
 
+    setFieldCount(count) {
+        this.fieldCount = Math.max(1, parseInt(count));
+    }
+
     createGames(teams) {
         const games = [];
         const shuffledTeams = this.shuffleArray(teams);
+        const maxGames = this.fieldCount;
         
-        for (let i = 0; i < shuffledTeams.length; i += 2) {
+        for (let i = 0; i < shuffledTeams.length && games.length < maxGames; i += 2) {
             if (i + 1 < shuffledTeams.length) {
                 games.push({
                     id: games.length,
                     team1: shuffledTeams[i],
                     team2: shuffledTeams[i + 1],
+                    field: (games.length % this.fieldCount) + 1,
                     result: null
                 });
             }
@@ -181,7 +188,7 @@ class CurlingTournament {
     }
 }
 
-const tournament = new CurlingTournament();
+const tournament = new PetanqueTournament();
 
 function addPlayer() {
     const input = document.getElementById('playerName');
@@ -192,7 +199,7 @@ function addPlayer() {
         updatePlayersDisplay();
         updateStartButton();
     } else {
-        alert('Please enter a valid, unique player name');
+        alert('Veuillez entrer un nom de joueur valide et unique');
     }
 }
 
@@ -207,7 +214,7 @@ function updatePlayersDisplay() {
     playersList.innerHTML = tournament.players.map(player => 
         `<div class="player-item">
             <span>${player}</span>
-            <button onclick="removePlayer('${player}')" class="remove-btn">Remove</button>
+            <button onclick="removePlayer('${player}')" class="remove-btn">Retirer</button>
         </div>`
     ).join('');
 }
@@ -218,6 +225,9 @@ function updateStartButton() {
 }
 
 function startTournament() {
+    const fieldCount = document.getElementById('fieldCount').value;
+    tournament.setFieldCount(fieldCount);
+    
     document.getElementById('tournamentSection').style.display = 'block';
     document.getElementById('standingsSection').style.display = 'block';
     tournament.startNewRound();
@@ -225,28 +235,29 @@ function startTournament() {
 }
 
 function updateTournamentDisplay() {
-    document.getElementById('roundInfo').innerHTML = `<h3>Round ${tournament.currentRound}</h3>`;
+    document.getElementById('roundInfo').innerHTML = `<h3>🎲 Manche ${tournament.currentRound}</h3>`;
     
     const gamesHtml = tournament.currentGames.map(game => 
         `<div class="game" id="game-${game.id}">
+            <div class="field-header">🏟️ Terrain ${game.field}</div>
             ${game.result ? 
                 `<div class="teams">
                     <span class="team">${game.team1.join(' & ')}</span>
-                    <span class="vs">vs</span>
+                    <span class="vs">contre</span>
                     <span class="team">${game.team2.join(' & ')}</span>
                 </div>
-                <div class="result">Result: ${game.result.team1Score} - ${game.result.team2Score}</div>` :
+                <div class="result">🎯 Résultat: ${game.result.team1Score} - ${game.result.team2Score}</div>` :
                 `<div class="score-input">
                     <div class="score-team">
                         <span class="score-team-name">${game.team1.join(' & ')}</span>
-                        <input type="number" id="team1-${game.id}" placeholder="Score" min="0">
+                        <input type="number" id="team1-${game.id}" placeholder="Points" min="0">
                     </div>
-                    <div class="vs-score">vs</div>
+                    <div class="vs-score">contre</div>
                     <div class="score-team">
                         <span class="score-team-name">${game.team2.join(' & ')}</span>
-                        <input type="number" id="team2-${game.id}" placeholder="Score" min="0">
+                        <input type="number" id="team2-${game.id}" placeholder="Points" min="0">
                     </div>
-                    <button onclick="recordResult(${game.id})">Record</button>
+                    <button onclick="recordResult(${game.id})">🏁 Enregistrer</button>
                 </div>`
             }
         </div>`
@@ -265,7 +276,7 @@ function recordResult(gameId) {
     const team2Score = document.getElementById(`team2-${gameId}`).value;
     
     if (team1Score === '' || team2Score === '') {
-        alert('Please enter scores for both teams');
+        alert('Veuillez entrer les points pour les deux équipes');
         return;
     }
     
@@ -281,27 +292,58 @@ function nextRound() {
 
 function updateStandings() {
     const standings = tournament.getStandings();
+    
+    function getTrophyIcon(rank, points) {
+        if (points === 0) return '';
+        switch(rank) {
+            case 1: return '🥇';
+            case 2: return '🥈';
+            case 3: return '🥉';
+            default: return '';
+        }
+    }
+    
+    function calculateRanks(standings) {
+        const rankedStandings = [];
+        let currentRank = 1;
+        
+        for (let i = 0; i < standings.length; i++) {
+            if (i > 0 && (standings[i].points !== standings[i-1].points || standings[i].wins !== standings[i-1].wins)) {
+                currentRank = i + 1;
+            }
+            rankedStandings.push({
+                ...standings[i],
+                rank: currentRank
+            });
+        }
+        
+        return rankedStandings;
+    }
+    
+    const rankedStandings = calculateRanks(standings);
+    
     const standingsHtml = `
         <table>
             <thead>
                 <tr>
-                    <th>Rank</th>
-                    <th>Player</th>
-                    <th>Points</th>
-                    <th>Wins</th>
-                    <th>Losses</th>
+                    <th>🏆 Rang</th>
+                    <th>👤 Joueur</th>
+                    <th>🎯 Points</th>
+                    <th>✅ Victoires</th>
+                    <th>❌ Défaites</th>
                 </tr>
             </thead>
             <tbody>
-                ${standings.map((player, index) => 
-                    `<tr>
-                        <td>${index + 1}</td>
+                ${rankedStandings.map((player) => {
+                    const trophy = getTrophyIcon(player.rank, player.points);
+                    return `<tr class="rank-${player.rank}">
+                        <td>${trophy} ${player.rank}</td>
                         <td>${player.name}</td>
                         <td>${player.points}</td>
                         <td>${player.wins}</td>
                         <td>${player.losses}</td>
-                    </tr>`
-                ).join('')}
+                    </tr>`;
+                }).join('')}
             </tbody>
         </table>
     `;
