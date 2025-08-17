@@ -26,7 +26,10 @@
                 <button onclick="addPlayer()">Ajouter Joueur</button>
             </div>
             <div id="playersList"></div>
-            <button onclick="startTournament()" id="startBtn" disabled>🚀 Commencer le Tournoi</button>
+            <div class="tournament-buttons">
+                <button onclick="startTournament()" id="startBtn" disabled>🚀 Commencer le Tournoi</button>
+                <button onclick="newTournament()" id="newTournamentBtn" style="display: none;">🆕 Nouveau Tournoi</button>
+            </div>
         </div>
 
         <div class="section" id="tournamentSection" style="display: none;">
@@ -46,6 +49,15 @@
         <div class="section" id="standingsSection" style="display: none;">
             <h2>🏅 Classement</h2>
             <div id="standings"></div>
+            <div class="share-section">
+                <h3>📱 Partager les Résultats</h3>
+                <div class="share-buttons">
+                    <button onclick="shareResults('twitter')" class="share-btn twitter">🐦 Twitter</button>
+                    <button onclick="shareResults('facebook')" class="share-btn facebook">📘 Facebook</button>
+                    <button onclick="shareResults('whatsapp')" class="share-btn whatsapp">💬 WhatsApp</button>
+                    <button onclick="copyResults()" class="share-btn copy">📋 Copier</button>
+                </div>
+            </div>
         </div>
     </div>
 

@@ -186,9 +186,56 @@ class PetanqueTournament {
             .map(([name, stats]) => ({ name, ...stats }))
             .sort((a, b) => b.points - a.points || b.wins - a.wins);
     }
+
+    saveToLocalStorage() {
+        const data = {
+            players: this.players,
+            currentRound: this.currentRound,
+            playerStats: this.playerStats,
+            usedPartnerships: Array.from(this.usedPartnerships),
+            currentGames: this.currentGames,
+            gameResults: this.gameResults,
+            fieldCount: this.fieldCount
+        };
+        localStorage.setItem('petanqueTournament', JSON.stringify(data));
+    }
+
+    loadFromLocalStorage() {
+        const saved = localStorage.getItem('petanqueTournament');
+        if (saved) {
+            const data = JSON.parse(saved);
+            this.players = data.players || [];
+            this.currentRound = data.currentRound || 0;
+            this.playerStats = data.playerStats || {};
+            this.usedPartnerships = new Set(data.usedPartnerships || []);
+            this.currentGames = data.currentGames || [];
+            this.gameResults = data.gameResults || [];
+            this.fieldCount = data.fieldCount || 2;
+            return true;
+        }
+        return false;
+    }
+
+    clearLocalStorage() {
+        localStorage.removeItem('petanqueTournament');
+    }
 }
 
 const tournament = new PetanqueTournament();
+
+window.addEventListener('load', function() {
+    if (tournament.loadFromLocalStorage()) {
+        updatePlayersDisplay();
+        updateStartButton();
+        if (tournament.currentRound > 0) {
+            document.getElementById('fieldCount').value = tournament.fieldCount;
+            document.getElementById('tournamentSection').style.display = 'block';
+            document.getElementById('standingsSection').style.display = 'block';
+            document.getElementById('newTournamentBtn').style.display = 'inline-block';
+            updateTournamentDisplay();
+        }
+    }
+});
 
 function addPlayer() {
     const input = document.getElementById('playerName');
@@ -198,6 +245,7 @@ function addPlayer() {
         input.value = '';
         updatePlayersDisplay();
         updateStartButton();
+        tournament.saveToLocalStorage();
     } else {
         alert('Veuillez entrer un nom de joueur valide et unique');
     }
@@ -207,6 +255,7 @@ function removePlayer(name) {
     tournament.removePlayer(name);
     updatePlayersDisplay();
     updateStartButton();
+    tournament.saveToLocalStorage();
 }
 
 function updatePlayersDisplay() {
@@ -230,8 +279,17 @@ function startTournament() {
     
     document.getElementById('tournamentSection').style.display = 'block';
     document.getElementById('standingsSection').style.display = 'block';
+    document.getElementById('newTournamentBtn').style.display = 'inline-block';
     tournament.startNewRound();
+    tournament.saveToLocalStorage();
     updateTournamentDisplay();
+}
+
+function newTournament() {
+    if (confirm('🔄 Êtes-vous sûr de vouloir commencer un nouveau tournoi? Tous les résultats actuels seront perdus.')) {
+        tournament.clearLocalStorage();
+        location.reload();
+    }
 }
 
 function updateTournamentDisplay() {
@@ -281,12 +339,14 @@ function recordResult(gameId) {
     }
     
     if (tournament.recordGameResult(gameId, team1Score, team2Score)) {
+        tournament.saveToLocalStorage();
         updateTournamentDisplay();
     }
 }
 
 function nextRound() {
     tournament.startNewRound();
+    tournament.saveToLocalStorage();
     updateTournamentDisplay();
 }
 
@@ -348,6 +408,49 @@ function updateStandings() {
         </table>
     `;
     document.getElementById('standings').innerHTML = standingsHtml;
+}
+
+function generateShareText() {
+    const standings = tournament.getStandings().slice(0, 3);
+    let text = `🎯 Tournoi de Pétanque - Manche ${tournament.currentRound}\n\n🏆 Podium:\n`;
+    
+    standings.forEach((player, index) => {
+        const trophies = ['🥇', '🥈', '🥉'];
+        const trophy = player.points > 0 ? trophies[index] || '🏅' : '🏅';
+        text += `${trophy} ${index + 1}. ${player.name} - ${player.points} points (${player.wins}V/${player.losses}D)\n`;
+    });
+    
+    text += `\n🎲 ${tournament.players.length} joueurs • ${tournament.fieldCount} terrains`;
+    return text;
+}
+
+function shareResults(platform) {
+    const text = generateShareText();
+    const encodedText = encodeURIComponent(text);
+    
+    let url;
+    switch(platform) {
+        case 'twitter':
+            url = `https://twitter.com/intent/tweet?text=${encodedText}`;
+            break;
+        case 'facebook':
+            url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}&quote=${encodedText}`;
+            break;
+        case 'whatsapp':
+            url = `https://wa.me/?text=${encodedText}`;
+            break;
+    }
+    
+    window.open(url, '_blank');
+}
+
+function copyResults() {
+    const text = generateShareText();
+    navigator.clipboard.writeText(text).then(() => {
+        alert('📋 Résultats copiés dans le presse-papiers!');
+    }).catch(() => {
+        alert('❌ Erreur lors de la copie');
+    });
 }
 
 document.getElementById('playerName').addEventListener('keypress', function(e) {

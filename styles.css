@@ -340,3 +340,70 @@ tr:hover {
         padding: 8px;
     }
 }
+
+.share-section {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 2px solid #e9ecef;
+}
+
+.share-buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 15px;
+}
+
+.share-btn {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: transform 0.2s, box-shadow 0.2s;
+    color: white;
+}
+
+.share-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.share-btn.twitter {
+    background: linear-gradient(45deg, #1da1f2, #0d8bd9);
+}
+
+.share-btn.facebook {
+    background: linear-gradient(45deg, #4267b2, #365899);
+}
+
+.share-btn.whatsapp {
+    background: linear-gradient(45deg, #25d366, #128c7e);
+}
+
+.share-btn.copy {
+    background: linear-gradient(45deg, #6c757d, #495057);
+}
+
+.tournament-buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+#newTournamentBtn {
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s;
+}
+
+#newTournamentBtn:hover {
+    background-color: #c0392b;
+}
