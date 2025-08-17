@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Curling Tournament Manager</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Curling Tournament Manager</h1>
+        
+        <div class="section">
+            <h2>Players</h2>
+            <div class="player-input">
+                <input type="text" id="playerName" placeholder="Enter player name">
+                <button onclick="addPlayer()">Add Player</button>
+            </div>
+            <div id="playersList"></div>
+            <button onclick="startTournament()" id="startBtn" disabled>Start Tournament</button>
+        </div>
+
+        <div class="section" id="tournamentSection" style="display: none;">
+            <h2>Tournament Progress</h2>
+            <div id="roundInfo"></div>
+            
+            <div id="currentGames"></div>
+            
+            <div id="gameResults" style="display: none;">
+                <h3>Enter Game Results</h3>
+                <div id="resultsForm"></div>
+            </div>
+            
+            <button onclick="nextRound()" id="nextRoundBtn" style="display: none;">Next Round</button>
+        </div>
+
+        <div class="section" id="standingsSection" style="display: none;">
+            <h2>Standings</h2>
+            <div id="standings"></div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

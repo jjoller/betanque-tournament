@@ -1,0 +1,292 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background-color: #f4f4f4;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+h1 {
+    text-align: center;
+    color: #2c3e50;
+    margin-bottom: 30px;
+    font-size: 2.5em;
+}
+
+h2 {
+    color: #34495e;
+    margin-bottom: 15px;
+    border-bottom: 2px solid #3498db;
+    padding-bottom: 5px;
+}
+
+h3 {
+    color: #2c3e50;
+    margin-bottom: 10px;
+}
+
+.section {
+    background: white;
+    margin-bottom: 20px;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.player-input {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.player-input input {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+.player-input button, #startBtn, #nextRoundBtn {
+    padding: 10px 20px;
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s;
+}
+
+.player-input button:hover, #startBtn:hover, #nextRoundBtn:hover {
+    background-color: #2980b9;
+}
+
+#startBtn:disabled, #nextRoundBtn:disabled {
+    background-color: #bdc3c7;
+    cursor: not-allowed;
+}
+
+.player-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.remove-btn {
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.remove-btn:hover {
+    background-color: #c0392b;
+}
+
+.game {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 15px;
+    margin-bottom: 10px;
+}
+
+.teams {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.team {
+    background-color: #3498db;
+    color: white;
+    padding: 8px 15px;
+    border-radius: 4px;
+    min-width: 200px;
+    text-align: center;
+}
+
+.vs {
+    margin: 0 15px;
+    font-weight: bold;
+    color: #7f8c8d;
+}
+
+.score-input {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    justify-content: center;
+    margin-top: 15px;
+    flex-wrap: wrap;
+}
+
+.vs-score {
+    margin: 0 15px;
+    font-weight: bold;
+    color: #7f8c8d;
+    font-size: 18px;
+    align-self: flex-end;
+    margin-bottom: 20px;
+}
+
+.score-team {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.score-team-name {
+    background-color: #3498db;
+    color: white;
+    padding: 8px 15px;
+    border-radius: 4px;
+    font-weight: bold;
+    text-align: center;
+    min-width: 200px;
+}
+
+.score-input input {
+    width: 200px;
+    padding: 15px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    text-align: center;
+    font-size: 18px;
+    font-weight: bold;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.score-input input:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+}
+
+.score-input button {
+    background-color: #27ae60;
+    color: white;
+    border: none;
+    padding: 15px 25px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    transition: background-color 0.3s, transform 0.1s;
+}
+
+.score-input button:hover {
+    transform: translateY(-1px);
+}
+
+.score-input button:hover {
+    background-color: #219a52;
+}
+
+.result {
+    text-align: center;
+    font-weight: bold;
+    color: #27ae60;
+    font-size: 18px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+th, td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+th {
+    background-color: #34495e;
+    color: white;
+    font-weight: bold;
+}
+
+tr:nth-child(even) {
+    background-color: #f2f2f2;
+}
+
+tr:hover {
+    background-color: #e8f4f8;
+}
+
+#nextRoundBtn {
+    background-color: #9b59b6;
+    margin-top: 20px;
+    width: 100%;
+    padding: 15px;
+    font-size: 18px;
+}
+
+#nextRoundBtn:hover {
+    background-color: #8e44ad;
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+    
+    .teams {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .vs {
+        margin: 0;
+    }
+    
+    .score-input {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .score-team {
+        width: 100%;
+        max-width: 300px;
+    }
+    
+    .score-team-name {
+        min-width: auto;
+        width: 100%;
+    }
+    
+    .score-input input {
+        width: 100%;
+    }
+    
+    table {
+        font-size: 14px;
+    }
+    
+    th, td {
+        padding: 8px;
+    }
+}
