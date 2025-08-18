@@ -3,37 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🎯 Tournoi de Pétanque</title>
+    <title data-translate="title">🎯 Tournoi de Pétanque</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
-        <h1>🎯 Tournoi de Pétanque</h1>
+        <div class="header">
+            <h1 data-translate="title">🎯 Tournoi de Pétanque</h1>
+            <div class="language-selector">
+                <select id="languageSelect" onchange="setLanguage(this.value)">
+                    <option value="fr">🇫🇷 Français</option>
+                    <option value="en">🇬🇧 English</option>
+                    <option value="de">🇩🇪 Deutsch</option>
+                    <option value="it">🇮🇹 Italiano</option>
+                </select>
+            </div>
+        </div>
         
         <div class="section">
-            <h2>⚙️ Configuration du Tournoi</h2>
+            <h2>⚙️ <span data-translate="setup">Configuration du Tournoi</span></h2>
             <div class="setup-row">
                 <div class="setup-item">
-                    <label for="fieldCount">Nombre de Terrains:</label>
+                    <label for="fieldCount" data-translate="fieldCount">Nombre de Terrains:</label>
                     <input type="number" id="fieldCount" min="1" max="10" value="2">
                 </div>
             </div>
             
-            <h3>👥 Joueurs</h3>
+            <h3>👥 <span data-translate="players">Joueurs</span></h3>
             <div class="player-input">
-                <input type="text" id="playerName" placeholder="Nom du joueur">
-                <button onclick="addPlayer()">Ajouter Joueur</button>
+                <input type="text" id="playerName" placeholder="Nom du joueur" data-translate="playerName">
+                <button onclick="addPlayer()" data-translate="addPlayer">Ajouter Joueur</button>
             </div>
             <div id="playersList"></div>
             <div class="tournament-buttons">
-                <button onclick="startTournament()" id="startBtn" disabled>🚀 Commencer le Tournoi</button>
-                <button onclick="newTournament()" id="newTournamentBtn" style="display: none;">🆕 Nouveau Tournoi</button>
+                <button onclick="startTournament()" id="startBtn" disabled data-translate="start">🚀 Commencer le Tournoi</button>
+                <button onclick="newTournament()" id="newTournamentBtn" style="display: none;" data-translate="newTournament">🆕 Nouveau Tournoi</button>
             </div>
         </div>
 
         <div class="section" id="tournamentSection" style="display: none;">
-            <h2>🏆 Progression du Tournoi</h2>
+            <h2>🏆 <span data-translate="tournament">Progression du Tournoi</span></h2>
             <div id="roundInfo"></div>
             
             <div id="currentGames"></div>
@@ -43,19 +53,19 @@
                 <div id="resultsForm"></div>
             </div>
             
-            <button onclick="nextRound()" id="nextRoundBtn" style="display: none;">🔄 Manche Suivante</button>
+            <button onclick="nextRound()" id="nextRoundBtn" style="display: none;" data-translate="nextRound">🔄 Manche Suivante</button>
         </div>
 
         <div class="section" id="standingsSection" style="display: none;">
-            <h2>🏅 Classement</h2>
+            <h2>🏅 <span data-translate="standings">Classement</span></h2>
             <div id="standings"></div>
             <div class="share-section">
-                <h3>📱 Partager les Résultats</h3>
+                <h3>📱 <span data-translate="share">Partager les Résultats</span></h3>
                 <div class="share-buttons">
-                    <button onclick="shareResults('twitter')" class="share-btn twitter">🐦 Twitter</button>
-                    <button onclick="shareResults('facebook')" class="share-btn facebook">📘 Facebook</button>
+                    <button onclick="shareResults('twitter')" class="share-btn twitter">𝕏</button>
                     <button onclick="shareResults('whatsapp')" class="share-btn whatsapp">💬 WhatsApp</button>
-                    <button onclick="copyResults()" class="share-btn copy">📋 Copier</button>
+                    <button onclick="copyResults()" class="share-btn copy" data-translate="copy">📋 Copier</button>
+                    <button onclick="downloadCSV()" class="share-btn csv" data-translate="downloadCSV">📊 CSV</button>
                 </div>
             </div>
         </div>

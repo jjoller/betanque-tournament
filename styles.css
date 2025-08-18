@@ -18,11 +18,39 @@ body {
     padding: 20px;
 }
 
-h1 {
-    text-align: center;
-    color: #2c3e50;
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     margin-bottom: 20px;
+}
+
+h1 {
+    color: #2c3e50;
     font-size: 1.8em;
+    margin: 0;
+}
+
+.language-selector select {
+    padding: 8px 12px;
+    border: 2px solid #3498db;
+    border-radius: 6px;
+    background: white;
+    color: #2c3e50;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.language-selector select:hover {
+    border-color: #2980b9;
+    background: #f8f9fa;
+}
+
+.language-selector select:focus {
+    outline: none;
+    border-color: #2980b9;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
 }
 
 h2 {
@@ -371,12 +399,10 @@ tr:hover {
 }
 
 .share-btn.twitter {
-    background: linear-gradient(45deg, #1da1f2, #0d8bd9);
+    background: linear-gradient(45deg, #000000, #333333);
+    color: white;
 }
 
-.share-btn.facebook {
-    background: linear-gradient(45deg, #4267b2, #365899);
-}
 
 .share-btn.whatsapp {
     background: linear-gradient(45deg, #25d366, #128c7e);
@@ -384,6 +410,11 @@ tr:hover {
 
 .share-btn.copy {
     background: linear-gradient(45deg, #6c757d, #495057);
+}
+
+.share-btn.csv {
+    background: linear-gradient(45deg, #6f42c1, #563d7c);
+    color: white;
 }
 
 .tournament-buttons {
@@ -406,4 +437,12 @@ tr:hover {
 
 #newTournamentBtn:hover {
     background-color: #c0392b;
+}
+
+.tournament-buttons {
+    margin-top: 15px;
+}
+
+.tournament-buttons button {
+    margin: 5px;
 }
