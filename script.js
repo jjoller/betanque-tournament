@@ -188,8 +188,8 @@ class PetanqueTournament {
         this.players = [];
         this.currentRound = 0;
         this.playerStats = {};
-        this.usedPartnerships = new Set();
-        this.usedOpponents = new Set();
+        this.partnershipMatrix = {}; // tracks how many times players have been teammates
+        this.opponentMatrix = {}; // tracks how many times players have played against each other
         this.currentGames = [];
         this.gameResults = [];
         this.fieldCount = 2;
@@ -197,8 +197,14 @@ class PetanqueTournament {
 
     addPlayer(name) {
         if (name && !this.players.includes(name)) {
+            // Store existing players before adding the new one
+            const existingPlayers = [...this.players];
+            
             this.players.push(name);
             this.playerStats[name] = { wins: 0, losses: 0, points: 0, totalMargin: 0, gamesPlayed: 0 };
+            
+            // Initialize matrices for new player
+            this.initializePlayerInMatrices(name, existingPlayers);
             return true;
         }
         return false;
@@ -209,9 +215,48 @@ class PetanqueTournament {
         if (index > -1) {
             this.players.splice(index, 1);
             delete this.playerStats[name];
+            
+            // Remove from matrices
+            this.removePlayerFromMatrices(name);
             return true;
         }
         return false;
+    }
+
+    initializePlayerInMatrices(newPlayer, existingPlayers = []) {
+        // Initialize partnership matrix
+        if (!this.partnershipMatrix[newPlayer]) {
+            this.partnershipMatrix[newPlayer] = {};
+        }
+        
+        // Initialize opponent matrix
+        if (!this.opponentMatrix[newPlayer]) {
+            this.opponentMatrix[newPlayer] = {};
+        }
+        
+        // Set relationships with all existing players
+        for (const existingPlayer of existingPlayers) {
+            this.partnershipMatrix[newPlayer][existingPlayer] = 0;
+            this.partnershipMatrix[existingPlayer][newPlayer] = 0;
+            this.opponentMatrix[newPlayer][existingPlayer] = 0;
+            this.opponentMatrix[existingPlayer][newPlayer] = 0;
+        }
+    }
+
+    removePlayerFromMatrices(playerToRemove) {
+        // Remove player's row
+        delete this.partnershipMatrix[playerToRemove];
+        delete this.opponentMatrix[playerToRemove];
+        
+        // Remove player's column from all other players
+        for (const player of this.players) {
+            if (this.partnershipMatrix[player]) {
+                delete this.partnershipMatrix[player][playerToRemove];
+            }
+            if (this.opponentMatrix[player]) {
+                delete this.opponentMatrix[player][playerToRemove];
+            }
+        }
     }
 
     shuffleArray(array) {
@@ -223,103 +268,195 @@ class PetanqueTournament {
         return shuffled;
     }
 
-    getPartnershipKey(player1, player2) {
-        return [player1, player2].sort().join('-');
-    }
-
-    getOpponentKey(team1, team2) {
-        const sortedTeam1 = [...team1].sort();
-        const sortedTeam2 = [...team2].sort();
-        return [sortedTeam1.join('&'), sortedTeam2.join('&')].sort().join(' vs ');
-    }
 
     formTeams() {
         if (this.players.length < 4) {
             throw new Error(t('minPlayersError'));
         }
 
-        const shuffledPlayers = this.shuffleArray(this.players);
-        const teams = [];
-        const tempUsedPartnerships = new Set();
-
-        for (let attempts = 0; attempts < 100; attempts++) {
-            teams.length = 0;
-            tempUsedPartnerships.clear();
-            
-            const availablePlayers = [...shuffledPlayers];
-            let success = true;
-
-            // Form teams of 2 players each
-            while (availablePlayers.length >= 2) {
-                const player1 = availablePlayers.shift();
-                let partner = null;
-                
-                // Try to find an unused partnership first
-                for (let i = 0; i < availablePlayers.length; i++) {
-                    const potentialPartner = availablePlayers[i];
-                    const partnershipKey = this.getPartnershipKey(player1, potentialPartner);
-                    
-                    if (!this.usedPartnerships.has(partnershipKey) && !tempUsedPartnerships.has(partnershipKey)) {
-                        partner = potentialPartner;
-                        availablePlayers.splice(i, 1);
-                        tempUsedPartnerships.add(partnershipKey);
-                        break;
-                    }
-                }
-
-                // If no unused partnership found, just take the first available player
-                if (!partner && availablePlayers.length > 0) {
-                    partner = availablePlayers.shift();
-                    const partnershipKey = this.getPartnershipKey(player1, partner);
-                    tempUsedPartnerships.add(partnershipKey);
-                }
-
-                if (partner) {
-                    teams.push([player1, partner]);
-                } else {
-                    success = false;
-                    break;
-                }
-            }
-
-            // If there's one player left, they sit out (single player team)
-            if (availablePlayers.length === 1) {
-                teams.push([availablePlayers[0]]);
-            }
-
-            if (success) {
-                tempUsedPartnerships.forEach(key => this.usedPartnerships.add(key));
-                console.log(`Round ${this.currentRound + 1}: Created ${teams.length} teams with ${teams.flat().length} players`);
-                return teams;
-            }
-
-            this.shuffleArray(shuffledPlayers);
+        // Calculate optimal team sizes
+        const maxFieldCapacity = this.fieldCount * 2;
+        const totalPlayers = this.players.length;
+        const targetTeamCount = Math.min(maxFieldCapacity, totalPlayers);
+        
+        // Calculate balanced team sizes (difference at most 1)
+        const baseTeamSize = Math.floor(totalPlayers / targetTeamCount);
+        const extraPlayers = totalPlayers % targetTeamCount;
+        
+        const teamSizes = [];
+        for (let i = 0; i < targetTeamCount; i++) {
+            teamSizes.push(baseTeamSize + (i < extraPlayers ? 1 : 0));
         }
-
-        // If we still can't form teams after 100 attempts, clear partnerships and try simpler approach
-        console.log('Could not form teams with partnership constraints, using simpler approach');
-        this.usedPartnerships.clear();
-        this.usedOpponents.clear();
-        return this.formTeamsSimple();
+        
+        console.log(`Round ${this.currentRound + 1}: Creating ${targetTeamCount} teams with sizes [${teamSizes.join(', ')}]`);
+        
+        // Use greedy optimization to form teams
+        const teams = this.greedyTeamFormation(teamSizes);
+        
+        // Validate all players are assigned
+        const assignedPlayers = teams.flat();
+        if (assignedPlayers.length !== totalPlayers) {
+            console.error(`Team formation failed: ${assignedPlayers.length}/${totalPlayers} players assigned`);
+            console.error('Missing players:', this.players.filter(p => !assignedPlayers.includes(p)));
+            return this.fallbackTeamFormation(teamSizes);
+        }
+        
+        // Double-check: verify no duplicate players
+        const uniqueAssigned = [...new Set(assignedPlayers)];
+        if (uniqueAssigned.length !== assignedPlayers.length) {
+            console.error('Duplicate players found in teams');
+            return this.fallbackTeamFormation(teamSizes);
+        }
+        
+        console.log(`✅ All ${totalPlayers} players successfully assigned to ${teams.length} teams`);
+        return teams;
     }
 
-    formTeamsSimple() {
-        const shuffledPlayers = this.shuffleArray(this.players);
+    greedyTeamFormation(teamSizes) {
         const teams = [];
-        const availablePlayers = [...shuffledPlayers];
+        const availablePlayers = [...this.players];
         
-        // Form teams of 2 players each
-        while (availablePlayers.length >= 2) {
-            const team = [availablePlayers.shift(), availablePlayers.shift()];
-            teams.push(team);
+        // Initialize empty teams
+        for (let i = 0; i < teamSizes.length; i++) {
+            teams.push([]);
         }
         
-        // If there's one player left, they sit out (single player team)
-        if (availablePlayers.length === 1) {
-            teams.push([availablePlayers[0]]);
+        // For each team, greedily select players to minimize partnership costs
+        for (let teamIndex = 0; teamIndex < teamSizes.length; teamIndex++) {
+            const targetSize = teamSizes[teamIndex];
+            
+            while (teams[teamIndex].length < targetSize && availablePlayers.length > 0) {
+                let bestPlayer = null;
+                let minCost = Infinity;
+                
+                // Try each available player and calculate partnership cost
+                for (const candidate of availablePlayers) {
+                    const cost = this.calculatePartnershipCost(teams[teamIndex], candidate);
+                    if (cost < minCost) {
+                        minCost = cost;
+                        bestPlayer = candidate;
+                    }
+                }
+                
+                // Add best player to team
+                if (bestPlayer) {
+                    teams[teamIndex].push(bestPlayer);
+                    availablePlayers.splice(availablePlayers.indexOf(bestPlayer), 1);
+                    
+                    // Update partnership matrix
+                    for (const teammate of teams[teamIndex]) {
+                        if (teammate !== bestPlayer) {
+                            this.partnershipMatrix[bestPlayer][teammate]++;
+                            this.partnershipMatrix[teammate][bestPlayer]++;
+                        }
+                    }
+                }
+            }
         }
         
-        console.log(`Simple formation: Created ${teams.length} teams with ${teams.flat().length} players`);
+        // CRITICAL: Ensure all remaining players are assigned
+        while (availablePlayers.length > 0) {
+            // Find the team with the smallest size to add remaining players
+            let smallestTeamIndex = 0;
+            let smallestSize = teams[0].length;
+            
+            for (let i = 1; i < teams.length; i++) {
+                if (teams[i].length < smallestSize) {
+                    smallestSize = teams[i].length;
+                    smallestTeamIndex = i;
+                }
+            }
+            
+            // Add remaining player to smallest team
+            const remainingPlayer = availablePlayers.shift();
+            teams[smallestTeamIndex].push(remainingPlayer);
+            
+            // Update partnership matrix
+            for (const teammate of teams[smallestTeamIndex]) {
+                if (teammate !== remainingPlayer) {
+                    this.partnershipMatrix[remainingPlayer][teammate]++;
+                    this.partnershipMatrix[teammate][remainingPlayer]++;
+                }
+            }
+            
+            console.log(`Added remaining player ${remainingPlayer} to team ${smallestTeamIndex}`);
+        }
+        
+        return teams;
+    }
+
+    calculatePartnershipCost(currentTeam, candidate) {
+        let cost = 0;
+        
+        // Calculate cost based on existing partnerships
+        for (const teammate of currentTeam) {
+            cost += this.partnershipMatrix[candidate][teammate] || 0;
+        }
+        
+        // Add small random factor to break ties
+        cost += Math.random() * 0.1;
+        
+        return cost;
+    }
+
+    fallbackTeamFormation(teamSizes) {
+        const shuffledPlayers = this.shuffleArray([...this.players]);
+        const teams = [];
+        
+        console.log('Using fallback team formation');
+        
+        let playerIndex = 0;
+        for (let i = 0; i < teamSizes.length; i++) {
+            const team = [];
+            const targetSize = teamSizes[i];
+            
+            for (let j = 0; j < targetSize && playerIndex < shuffledPlayers.length; j++) {
+                team.push(shuffledPlayers[playerIndex++]);
+            }
+            
+            if (team.length > 0) {
+                teams.push(team);
+                
+                // Update partnership matrix for fallback assignments
+                for (let p1 = 0; p1 < team.length; p1++) {
+                    for (let p2 = p1 + 1; p2 < team.length; p2++) {
+                        const player1 = team[p1];
+                        const player2 = team[p2];
+                        this.partnershipMatrix[player1][player2]++;
+                        this.partnershipMatrix[player2][player1]++;
+                    }
+                }
+            }
+        }
+        
+        // CRITICAL: Ensure all remaining players are assigned (fallback safety)
+        while (playerIndex < shuffledPlayers.length) {
+            // Find the team with the smallest size
+            let smallestTeamIndex = 0;
+            let smallestSize = teams[0].length;
+            
+            for (let i = 1; i < teams.length; i++) {
+                if (teams[i].length < smallestSize) {
+                    smallestSize = teams[i].length;
+                    smallestTeamIndex = i;
+                }
+            }
+            
+            // Add remaining player to smallest team
+            const remainingPlayer = shuffledPlayers[playerIndex++];
+            teams[smallestTeamIndex].push(remainingPlayer);
+            
+            // Update partnership matrix
+            for (let k = 0; k < teams[smallestTeamIndex].length - 1; k++) {
+                const teammate = teams[smallestTeamIndex][k];
+                this.partnershipMatrix[remainingPlayer][teammate]++;
+                this.partnershipMatrix[teammate][remainingPlayer]++;
+            }
+            
+            console.log(`Fallback: Added remaining player ${remainingPlayer} to team ${smallestTeamIndex}`);
+        }
+        
+        console.log(`Fallback result: ${teams.length} teams, ${teams.flat().length} players assigned`);
         return teams;
     }
 
@@ -329,40 +466,44 @@ class PetanqueTournament {
 
     createGames(teams) {
         const games = [];
-        // All teams can play, including single-player teams
         const availableTeams = [...teams];
+        const maxGames = this.fieldCount;
         
-        // Create games for ALL teams - field count just determines field assignment
-        while (availableTeams.length >= 2) {
+        // Use greedy algorithm to minimize opponent repetition
+        while (availableTeams.length >= 2 && games.length < maxGames) {
             let bestMatch = null;
-            let foundNewOpponent = false;
+            let minCost = Infinity;
             
+            // Try all possible team pairings
             for (let i = 0; i < availableTeams.length - 1; i++) {
                 for (let j = i + 1; j < availableTeams.length; j++) {
                     const team1 = availableTeams[i];
                     const team2 = availableTeams[j];
-                    const opponentKey = this.getOpponentKey(team1, team2);
                     
-                    if (!this.usedOpponents.has(opponentKey)) {
-                        bestMatch = { team1, team2, i, j };
-                        foundNewOpponent = true;
-                        break;
-                    } else if (!bestMatch) {
+                    // Calculate opponent cost
+                    const cost = this.calculateOpponentCost(team1, team2);
+                    
+                    if (cost < minCost) {
+                        minCost = cost;
                         bestMatch = { team1, team2, i, j };
                     }
                 }
-                if (foundNewOpponent) break;
             }
             
             if (bestMatch) {
+                const fieldNumber = games.length + 1;
                 games.push({
                     id: games.length,
                     team1: bestMatch.team1,
                     team2: bestMatch.team2,
-                    field: (games.length % this.fieldCount) + 1,
+                    field: fieldNumber,
                     result: null
                 });
                 
+                // Update opponent matrix
+                this.updateOpponentMatrix(bestMatch.team1, bestMatch.team2);
+                
+                // Remove the teams from available teams
                 availableTeams.splice(Math.max(bestMatch.i, bestMatch.j), 1);
                 availableTeams.splice(Math.min(bestMatch.i, bestMatch.j), 1);
             } else {
@@ -370,7 +511,45 @@ class PetanqueTournament {
             }
         }
         
+        const playingPlayers = games.flatMap(game => [...game.team1, ...game.team2]).length;
+        const totalPlayers = teams.flatMap(team => team).length;
+        const fieldsUsed = games.length;
+        
+        console.log(`Created ${games.length} games using ${fieldsUsed}/${this.fieldCount} fields`);
+        console.log(`${playingPlayers}/${totalPlayers} players participating this round`);
+        
+        if (playingPlayers < totalPlayers) {
+            const sittingOutPlayers = totalPlayers - playingPlayers;
+            console.log(`${sittingOutPlayers} player(s) sitting out this round`);
+        }
+        
         return games;
+    }
+
+    calculateOpponentCost(team1, team2) {
+        let totalCost = 0;
+        
+        // Sum all opponent relationships between the two teams
+        for (const player1 of team1) {
+            for (const player2 of team2) {
+                totalCost += this.opponentMatrix[player1][player2] || 0;
+            }
+        }
+        
+        // Add small random factor to break ties
+        totalCost += Math.random() * 0.1;
+        
+        return totalCost;
+    }
+
+    updateOpponentMatrix(team1, team2) {
+        // Update opponent counts for all player pairs between the teams
+        for (const player1 of team1) {
+            for (const player2 of team2) {
+                this.opponentMatrix[player1][player2]++;
+                this.opponentMatrix[player2][player1]++;
+            }
+        }
     }
 
     recordGameResult(gameId, team1Score, team2Score) {
@@ -406,9 +585,6 @@ class PetanqueTournament {
             ...game
         });
 
-        const opponentKey = this.getOpponentKey(game.team1, game.team2);
-        this.usedOpponents.add(opponentKey);
-
         return true;
     }
 
@@ -442,8 +618,8 @@ class PetanqueTournament {
             players: this.players,
             currentRound: this.currentRound,
             playerStats: this.playerStats,
-            usedPartnerships: Array.from(this.usedPartnerships),
-            usedOpponents: Array.from(this.usedOpponents),
+            partnershipMatrix: this.partnershipMatrix,
+            opponentMatrix: this.opponentMatrix,
             currentGames: this.currentGames,
             gameResults: this.gameResults,
             fieldCount: this.fieldCount
@@ -458,11 +634,19 @@ class PetanqueTournament {
             this.players = data.players || [];
             this.currentRound = data.currentRound || 0;
             this.playerStats = data.playerStats || {};
-            this.usedPartnerships = new Set(data.usedPartnerships || []);
-            this.usedOpponents = new Set(data.usedOpponents || []);
+            this.partnershipMatrix = data.partnershipMatrix || {};
+            this.opponentMatrix = data.opponentMatrix || {};
             this.currentGames = data.currentGames || [];
             this.gameResults = data.gameResults || [];
             this.fieldCount = data.fieldCount || 2;
+            
+            // Initialize matrices for any missing players
+            for (const player of this.players) {
+                if (!this.partnershipMatrix[player]) {
+                    this.initializePlayerInMatrices(player);
+                }
+            }
+            
             return true;
         }
         return false;
