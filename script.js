@@ -238,18 +238,6 @@ class PetanqueTournament {
             throw new Error(t('minPlayersError'));
         }
 
-        const totalPlayers = this.players.length;
-        const extraPlayers = totalPlayers % 4;
-        let teamsOf3Needed = 0;
-        
-        if (extraPlayers === 1) {
-            teamsOf3Needed = 1;
-        } else if (extraPlayers === 2) {
-            teamsOf3Needed = 2;
-        } else if (extraPlayers === 3) {
-            teamsOf3Needed = 1;
-        }
-
         const shuffledPlayers = this.shuffleArray(this.players);
         const teams = [];
         const tempUsedPartnerships = new Set();
@@ -260,56 +248,79 @@ class PetanqueTournament {
             
             const availablePlayers = [...shuffledPlayers];
             let success = true;
-            let teamsOf3Created = 0;
 
-            while (availablePlayers.length > 0) {
-                if (availablePlayers.length === 3 || 
-                    (availablePlayers.length === 5 && teamsOf3Created < teamsOf3Needed) ||
-                    (availablePlayers.length >= 3 && teamsOf3Created < teamsOf3Needed && teams.length >= Math.floor(totalPlayers / 4) * 2 - teamsOf3Needed)) {
+            // Form teams of 2 players each
+            while (availablePlayers.length >= 2) {
+                const player1 = availablePlayers.shift();
+                let partner = null;
+                
+                // Try to find an unused partnership first
+                for (let i = 0; i < availablePlayers.length; i++) {
+                    const potentialPartner = availablePlayers[i];
+                    const partnershipKey = this.getPartnershipKey(player1, potentialPartner);
                     
-                    const player1 = availablePlayers.shift();
-                    const player2 = availablePlayers.shift();
-                    const player3 = availablePlayers.shift();
-                    teams.push([player1, player2, player3]);
-                    teamsOf3Created++;
-                } else if (availablePlayers.length >= 2) {
-                    const player1 = availablePlayers.shift();
-                    let partner = null;
-                    
-                    for (let i = 0; i < availablePlayers.length; i++) {
-                        const potentialPartner = availablePlayers[i];
-                        const partnershipKey = this.getPartnershipKey(player1, potentialPartner);
-                        
-                        if (!this.usedPartnerships.has(partnershipKey) && !tempUsedPartnerships.has(partnershipKey)) {
-                            partner = potentialPartner;
-                            availablePlayers.splice(i, 1);
-                            tempUsedPartnerships.add(partnershipKey);
-                            break;
-                        }
-                    }
-
-                    if (partner) {
-                        teams.push([player1, partner]);
-                    } else {
-                        success = false;
+                    if (!this.usedPartnerships.has(partnershipKey) && !tempUsedPartnerships.has(partnershipKey)) {
+                        partner = potentialPartner;
+                        availablePlayers.splice(i, 1);
+                        tempUsedPartnerships.add(partnershipKey);
                         break;
                     }
+                }
+
+                // If no unused partnership found, just take the first available player
+                if (!partner && availablePlayers.length > 0) {
+                    partner = availablePlayers.shift();
+                    const partnershipKey = this.getPartnershipKey(player1, partner);
+                    tempUsedPartnerships.add(partnershipKey);
+                }
+
+                if (partner) {
+                    teams.push([player1, partner]);
                 } else {
+                    success = false;
                     break;
                 }
             }
 
-            if (success && availablePlayers.length === 0) {
+            // If there's one player left, they sit out (single player team)
+            if (availablePlayers.length === 1) {
+                teams.push([availablePlayers[0]]);
+            }
+
+            if (success) {
                 tempUsedPartnerships.forEach(key => this.usedPartnerships.add(key));
+                console.log(`Round ${this.currentRound + 1}: Created ${teams.length} teams with ${teams.flat().length} players`);
                 return teams;
             }
 
             this.shuffleArray(shuffledPlayers);
         }
 
+        // If we still can't form teams after 100 attempts, clear partnerships and try simpler approach
+        console.log('Could not form teams with partnership constraints, using simpler approach');
         this.usedPartnerships.clear();
         this.usedOpponents.clear();
-        return this.formTeams();
+        return this.formTeamsSimple();
+    }
+
+    formTeamsSimple() {
+        const shuffledPlayers = this.shuffleArray(this.players);
+        const teams = [];
+        const availablePlayers = [...shuffledPlayers];
+        
+        // Form teams of 2 players each
+        while (availablePlayers.length >= 2) {
+            const team = [availablePlayers.shift(), availablePlayers.shift()];
+            teams.push(team);
+        }
+        
+        // If there's one player left, they sit out (single player team)
+        if (availablePlayers.length === 1) {
+            teams.push([availablePlayers[0]]);
+        }
+        
+        console.log(`Simple formation: Created ${teams.length} teams with ${teams.flat().length} players`);
+        return teams;
     }
 
     setFieldCount(count) {
@@ -318,12 +329,12 @@ class PetanqueTournament {
 
     createGames(teams) {
         const games = [];
-        const maxGames = this.fieldCount;
+        // All teams can play, including single-player teams
         const availableTeams = [...teams];
         
-        for (let attempts = 0; attempts < 100 && games.length < maxGames && availableTeams.length >= 2; attempts++) {
+        // Create games for ALL teams - field count just determines field assignment
+        while (availableTeams.length >= 2) {
             let bestMatch = null;
-            let bestMatchIndex = -1;
             let foundNewOpponent = false;
             
             for (let i = 0; i < availableTeams.length - 1; i++) {
@@ -549,25 +560,29 @@ function updateTournamentDisplay() {
     
     const gamesHtml = tournament.currentGames.map(game => 
         `<div class="game" id="game-${game.id}">
-            <div class="field-header">🏟️ ${t('field')} ${game.field}</div>
             ${game.result ? 
-                `<div class="teams">
-                    <span class="team">${game.team1.join(' & ')}</span>
-                    <span class="vs">${t('against')}</span>
-                    <span class="team">${game.team2.join(' & ')}</span>
+                `<div class="teams-with-field">
+                    <div class="field-header">🏟️ ${t('field')} ${game.field}</div>
+                    <div class="teams">
+                        <span class="team">${game.team1.join(' & ')}</span>
+                        <span class="vs">${t('against')}</span>
+                        <span class="team">${game.team2.join(' & ')}</span>
+                    </div>
                 </div>
                 <div class="result">🎯 ${t('result')}: ${game.result.team1Score} - ${game.result.team2Score}</div>` :
-                `<div class="score-input">
-                    <div class="score-team">
-                        <span class="score-team-name">${game.team1.join(' & ')}</span>
-                        <input type="number" id="team1-${game.id}" placeholder="${t('points')}" min="0">
+                `<div class="score-input-with-field">
+                    <div class="field-header">🏟️ ${t('field')} ${game.field}</div>
+                    <div class="score-input">
+                        <div class="score-team">
+                            <span class="score-team-name">${game.team1.join(' & ')}</span>
+                            <input type="number" id="team1-${game.id}" placeholder="${t('points')}" min="0" oninput="checkAllScoresEntered()">
+                        </div>
+                        <div class="vs-score">${t('against')}</div>
+                        <div class="score-team">
+                            <span class="score-team-name">${game.team2.join(' & ')}</span>
+                            <input type="number" id="team2-${game.id}" placeholder="${t('points')}" min="0" oninput="checkAllScoresEntered()">
+                        </div>
                     </div>
-                    <div class="vs-score">${t('against')}</div>
-                    <div class="score-team">
-                        <span class="score-team-name">${game.team2.join(' & ')}</span>
-                        <input type="number" id="team2-${game.id}" placeholder="${t('points')}" min="0">
-                    </div>
-                    <button onclick="recordResult(${game.id})">${t('record')}</button>
                 </div>`
             }
         </div>`
@@ -575,10 +590,23 @@ function updateTournamentDisplay() {
     
     document.getElementById('currentGames').innerHTML = gamesHtml;
     
-    const allCompleted = tournament.allGamesCompleted();
-    document.getElementById('nextRoundBtn').style.display = allCompleted ? 'block' : 'none';
+    // Check if next round button should be shown using the new logic
+    checkAllScoresEntered();
     
     updateStandings();
+}
+
+function checkAllScoresEntered() {
+    // Check if all games have both scores entered
+    const allScoresEntered = tournament.currentGames.every(game => {
+        if (game.result) return true; // Already completed
+        const team1Score = document.getElementById(`team1-${game.id}`);
+        const team2Score = document.getElementById(`team2-${game.id}`);
+        return team1Score && team2Score && team1Score.value !== '' && team2Score.value !== '';
+    });
+    
+    // Show/hide next round button based on whether all scores are entered
+    document.getElementById('nextRoundBtn').style.display = allScoresEntered ? 'block' : 'none';
 }
 
 function recordResult(gameId) {
@@ -586,7 +614,6 @@ function recordResult(gameId) {
     const team2Score = document.getElementById(`team2-${gameId}`).value;
     
     if (team1Score === '' || team2Score === '') {
-        alert(t('enterBothScores'));
         return;
     }
     
@@ -597,6 +624,19 @@ function recordResult(gameId) {
 }
 
 function nextRound() {
+    // First, record all the current game results
+    tournament.currentGames.forEach(game => {
+        if (!game.result) { // Only if not already recorded
+            const team1Score = document.getElementById(`team1-${game.id}`).value;
+            const team2Score = document.getElementById(`team2-${game.id}`).value;
+            
+            if (team1Score !== '' && team2Score !== '') {
+                tournament.recordGameResult(game.id, team1Score, team2Score);
+            }
+        }
+    });
+    
+    // Then start the new round
     tournament.startNewRound();
     tournament.saveToLocalStorage();
     updateTournamentDisplay();

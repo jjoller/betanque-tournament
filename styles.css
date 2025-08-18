@@ -98,15 +98,26 @@ h3 {
     width: 80px;
 }
 
-.field-header {
-    background: linear-gradient(45deg, #e67e22, #f39c12);
-    color: white;
-    padding: 8px 15px;
-    border-radius: 6px;
-    text-align: center;
-    font-weight: bold;
+.teams-with-field {
+    display: flex;
+    align-items: center;
+    gap: 15px;
     margin-bottom: 10px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.score-input-with-field {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+}
+
+.field-header {
+    color: #2c3e50;
+    font-weight: bold;
+    font-size: 14px;
+    margin: 0;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .player-input {
@@ -202,8 +213,8 @@ h3 {
     gap: 20px;
     align-items: center;
     justify-content: center;
-    margin-top: 15px;
     flex-wrap: wrap;
+    flex: 1;
 }
 
 .vs-score {
@@ -445,4 +456,21 @@ tr:hover {
 
 .tournament-buttons button {
     margin: 5px;
+}
+
+.sitting-out {
+    text-align: center;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    margin-top: 10px;
+}
+
+.sitting-out .team {
+    background-color: #6c757d;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 4px;
+    margin: 0 5px;
+    display: inline-block;
 }
