@@ -4,7 +4,7 @@ const translations = {
         addPlayer: "Ajouter un joueur",
         playerName: "Nom du joueur",
         playersCount: "joueurs",
-        minPlayersError: "Il faut au moins 4 joueurs pour former des équipes",
+        minPlayersError: "Il faut au moins 2 joueurs pour jouer un tournoi",
         fieldCount: "Nombre de terrains",
         start: "Commencer le tournoi",
         newTournament: "🔄 Nouveau tournoi",
@@ -41,7 +41,7 @@ const translations = {
         addPlayer: "Add player",
         playerName: "Player name",
         playersCount: "players",
-        minPlayersError: "At least 4 players are needed to form teams",
+        minPlayersError: "At least 2 players are needed to play a tournament",
         fieldCount: "Number of fields",
         start: "Start tournament",
         newTournament: "🔄 New tournament",
@@ -78,7 +78,7 @@ const translations = {
         addPlayer: "Spieler hinzufügen",
         playerName: "Spielername",
         playersCount: "Spieler",
-        minPlayersError: "Mindestens 4 Spieler sind nötig um Teams zu bilden",
+        minPlayersError: "Mindestens 2 Spieler sind nötig um ein Turnier zu spielen",
         fieldCount: "Anzahl Felder",
         start: "Turnier starten",
         newTournament: "🔄 Neues Turnier",
@@ -115,7 +115,7 @@ const translations = {
         addPlayer: "Aggiungi giocatore",
         playerName: "Nome giocatore",
         playersCount: "giocatori",
-        minPlayersError: "Servono almeno 4 giocatori per formare le squadre",
+        minPlayersError: "Servono almeno 2 giocatori per giocare un torneo",
         fieldCount: "Numero di campi",
         start: "Inizia torneo",
         newTournament: "🔄 Nuovo torneo",
@@ -270,7 +270,7 @@ class PetanqueTournament {
 
 
     formTeams() {
-        if (this.players.length < 4) {
+        if (this.players.length < 2) {
             throw new Error(t('minPlayersError'));
         }
 
@@ -716,7 +716,7 @@ function updatePlayersDisplay() {
 
 function updateStartButton() {
     const startBtn = document.getElementById('startBtn');
-    startBtn.disabled = tournament.players.length < 4;
+    startBtn.disabled = tournament.players.length < 2;
 }
 
 function startTournament() {
