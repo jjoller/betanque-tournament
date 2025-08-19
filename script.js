@@ -24,7 +24,6 @@ const translations = {
         wins: "Victoires",
         avgMargin: "Marge Moy.",
         totalPoints: "Points",
-        defeats: "Défaites",
         podium: "Podium",
         share: "Partager",
         copy: "📋 Copier",
@@ -61,7 +60,6 @@ const translations = {
         wins: "Wins",
         avgMargin: "Avg. Margin",
         totalPoints: "Points",
-        defeats: "Defeats",
         podium: "Podium",
         share: "Share",
         copy: "📋 Copy",
@@ -98,7 +96,6 @@ const translations = {
         wins: "Siege",
         avgMargin: "Durchschn. Marge",
         totalPoints: "Punkte",
-        defeats: "Niederlagen",
         podium: "Podium",
         share: "Teilen",
         copy: "📋 Kopieren",
@@ -135,7 +132,6 @@ const translations = {
         wins: "Vittorie",
         avgMargin: "Margine Med.",
         totalPoints: "Punti",
-        defeats: "Sconfitte",
         podium: "Podio",
         share: "Condividi",
         copy: "📋 Copia",
@@ -850,7 +846,6 @@ function updateStandings() {
                     <th>✅ ${t('wins')}</th>
                     <th>📊 ${t('avgMargin')}</th>
                     <th>🎯 ${t('totalPoints')}</th>
-                    <th>❌ ${t('defeats')}</th>
                 </tr>
             </thead>
             <tbody>
@@ -862,7 +857,6 @@ function updateStandings() {
                         <td>${player.wins}</td>
                         <td>${player.avgMargin.toFixed(1)}</td>
                         <td>${player.points}</td>
-                        <td>${player.losses}</td>
                     </tr>`;
                 }).join('')}
             </tbody>
@@ -886,7 +880,7 @@ function generateShareText() {
         }
         
         const marginText = player.gamesPlayed > 0 ? ` (${player.avgMargin > 0 ? '+' : ''}${player.avgMargin.toFixed(1)}avg)` : '';
-        text += `${rankEmoji} ${player.name} - ${player.wins}${t('wins').charAt(0)}/${player.losses}${t('defeats').charAt(0)} - ${player.points}pts${marginText}\n`;
+        text += `${rankEmoji} ${player.name} - ${player.wins}${t('wins').charAt(0)} - ${player.points}pts${marginText}\n`;
     });
     
     text += `\n🎲 ${tournament.players.length} ${t('playersCount')} • ${tournament.fieldCount} ${t('fieldCount').toLowerCase()}`;
@@ -928,8 +922,7 @@ function downloadCSV() {
         t('player'), 
         t('wins'),
         t('avgMargin'),
-        t('totalPoints'),
-        t('defeats')
+        t('totalPoints')
     ];
     
     // Create CSV content
@@ -943,8 +936,7 @@ function downloadCSV() {
             `"${player.name}"`, // Quote name in case of commas
             player.wins,
             player.avgMargin.toFixed(1),
-            player.points,
-            player.losses
+            player.points
         ];
         csvContent += row.join(',') + '\n';
     });
